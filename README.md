@@ -1,1 +1,1 @@
-# LLM-CKKS-Bench
+# LLM-CKKS-Benchmark

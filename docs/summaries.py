@@ -1,0 +1,401 @@
+import json
+
+data = {
+    "summaries": [
+        {
+            "file_path": "simple_ckks_arithmetic.cpp",
+            "summary": """This file presents a full walkthrough for executing real-number arithmetic on encrypted data using the CKKS scheme in OpenFHE. The main task is to evaluate the arithmetic expression x^2 + x*y + y^2 + x + y over two input vectors of real numbers while they remain encrypted. The implementation meticulously follows all seven key stages of CKKS-based homomorphic computation:
+
+Parameter Setup: Configures the CryptoContext with a target multiplicative depth, scaling modulus size, batch size, and scaling technique.
+
+Key Generation: Generates public and secret keys, as well as evaluation keys needed for homomorphic addition and multiplication.
+
+Encoding: Converts real-valued input vectors into plaintexts using CKKS encoding.
+
+Encryption: Encrypts the encoded vectors to produce ciphertexts.
+
+Computation: Homomorphically evaluates the full polynomial expression using EvalMult, EvalAdd, and relinearization.
+
+Decryption: Uses the secret key to decrypt the result ciphertext.
+
+Decoding: Transforms the plaintext back into human-readable real numbers for result verification.
+
+This example focuses on correctness and completeness rather than performance, and is designed to teach the foundational structure of CKKS pipelines in OpenFHE by computing a meaningful non-linear function on encrypted inputs."""
+        },
+        {
+            "file_path": "advanced-real-numbers.cpp",
+            "summary": """This file demonstrates advanced examples of real-number encrypted computation using the CKKS scheme in OpenFHE, focusing on rescaling strategies, key switching techniques, and optimized rotation operations. The core tasks include evaluating a high-degree polynomial f(x) = x^{18} + x^9 + 1 under different rescaling techniques, exploring hybrid key switching, and showcasing fast rotation via hoisting. The implementation is organized into several focused demos, each highlighting a specific concept:
+
+AutomaticRescaleDemo: Evaluates f(x) using different scaling techniques (FLEXIBLEAUTO, FLEXIBLEAUTOEXT, FIXEDAUTO), demonstrating automatic rescaling where EvalMult, EvalAdd, and Encrypt/Decrypt operations are performed without manual rescale calls.
+
+ManualRescaleDemo: Solves the same polynomial but using FIXEDMANUAL scaling, requiring explicit Rescale() operations between multiplications to manage ciphertext depth manually.
+
+HybridKeySwitchingDemo1 and HybridKeySwitchingDemo2: Analyze the effect of the number of digits (dnum) in HYBRID key switching on performance and security. These demos use EvalRotate to perform ciphertext rotations and benchmark runtime differences when varying dnum.
+
+FastRotationsDemo1 and FastRotationsDemo2: Demonstrate hoisted rotations using EvalFastRotationPrecompute and EvalFastRotation, comparing performance against standard EvalRotate. Both HYBRID and BV key switching techniques are tested, with an emphasis on how hoisting speeds up multiple rotations.
+
+Each demo meticulously sets up the CKKS parameters (multiplicative depth, scaling modulus size, batch size, scaling technique), generates keys (KeyGen, EvalMultKeyGen, EvalRotateKeyGen), encodes real-valued vectors (MakeCKKSPackedPlaintext), encrypts them (Encrypt), evaluates homomorphic operations, and decrypts results (Decrypt) for correctness validation.
+
+This example serves as a detailed guide to understanding advanced CKKS operations in OpenFHE, particularly the trade-offs between rescaling methods, key switching strategies, and rotation optimizations for practical encrypted computation pipelines."""
+        },
+        {
+            "file_path": "advanced-ckks-bootstrapping.cpp",
+            "summary": """This file demonstrates bootstrapping in the CKKS scheme using OpenFHE, with an emphasis on sparse packing to optimize performance. The main objective is to refresh an encrypted CKKS ciphertext (with depleted levels) using bootstrapping, thereby restoring its multiplicative depth for continued homomorphic computation.
+
+The implementation follows the complete CKKS bootstrapping pipeline, using the following methods:
+
+Parameter Setup: Constructs a `CryptoContext` via `CCParams<CryptoContextCKKSRNS>` and configures it with parameters like `SetSecretKeyDist()`, `SetSecurityLevel()`, `SetRingDim()`, `SetNumLargeDigits()`, `SetKeySwitchTechnique()`, `SetScalingModSize()`, `SetScalingTechnique()`, and `SetFirstModSize()`. Bootstrapping parameters such as `levelBudget` and `bsgsDim` are set, and the total depth is determined using `FHECKKSRNS::GetBootstrapDepth()`.
+
+Context Generation: Initializes the CKKS context with `GenCryptoContext(parameters)` and enables relevant features using `Enable(PKE)`, `Enable(KEYSWITCH)`, `Enable(LEVELEDSHE)`, `Enable(ADVANCEDSHE)`, and `Enable(FHE)`.
+
+Precomputations: Prepares bootstrapping precomputations via `EvalBootstrapSetup(levelBudget, bsgsDim, numSlots)`.
+
+Key Generation: Generates keys with `KeyGen()`, `EvalMultKeyGen(secretKey)`, and bootstrapping keys via `EvalBootstrapKeyGen(secretKey, numSlots)`.
+
+Encoding and Encryption: A real-valued input vector is encoded using `MakeCKKSPackedPlaintext()` with sparse packing (`numSlots`), and then encrypted using `Encrypt(publicKey, plaintext)`.
+
+Bootstrapping: The encrypted ciphertext is refreshed using `EvalBootstrap(ciphertext)`, which increases its remaining levels.
+
+Decryption and Output: The result is decrypted using `Decrypt(secretKey, ciphertext, &plaintext)` and printed after setting its length with `SetLength(numSlots)`.
+
+This example is designed to show correctness and efficiency in bootstrapping with sparse packing, and illustrates how to configure and invoke OpenFHE’s advanced CKKS bootstrapping capabilities in a step-by-step fashion.
+"""
+        },
+        {
+            "file_path": "advanced-real-numbers-128.cpp",
+            "summary": """This file presents a suite of advanced CKKS demonstrations for 128-bit integer precision in OpenFHE, emphasizing practical rescaling strategies, key switching optimizations, and rotation acceleration using hoisting. It showcases multiple core tasks in homomorphic encryption under different configurations and algorithmic tradeoffs.
+
+Main Tasks and Methods:
+
+1. **Automatic vs. Manual Rescaling**:
+   - *Tasks*: Evaluate a polynomial expression \( f(x) = x^{18} + x^9 + 1 \) under two CKKS scaling strategies.
+   - *Techniques*:
+     - `FIXEDAUTO`: Automates `Rescale()` calls after each multiplication.
+     - `FIXEDMANUAL`: Requires explicit `Rescale()` invocations and manual tracking of ciphertext depth.
+   - *Methods*: `EvalMult()`, `EvalAdd()`, `EvalSub()`, `Rescale()`, `Decrypt()`, `MakeCKKSPackedPlaintext()`, `Encrypt()`, `KeyGen()`, `EvalMultKeyGen()`.
+
+2. **HYBRID Key Switching Demonstration**:
+   - *Tasks*: Investigate performance tradeoffs in HYBRID key switching by varying the number of large digits (e.g., 2 vs. 3).
+   - *Techniques*:
+     - HYBRID key switching with digit decomposition (`SetNumLargeDigits()`), illustrating effects on ring dimension and performance.
+   - *Methods*: `EvalRotate()`, `EvalRotateKeyGen()`, `MakeCKKSPackedPlaintext()`, `Encrypt()`, `Decrypt()`, `GenCryptoContext()`.
+
+3. **Rotation Optimization via Hoisting**:
+   - *Tasks*: Perform multiple ciphertext rotations efficiently by precomputing rotation-invariant components.
+   - *Techniques*:
+     - Hoisting reuses expensive precomputations across multiple `EvalRotate()` operations.
+   - *Methods*: `EvalFastRotationPrecompute()`, `EvalFastRotation()`, `EvalRotate()`, `Encrypt()`, `Decrypt()`.
+
+4. **Comparison of HYBRID vs. BV Key Switching in Hoisting**:
+   - *Tasks*: Compare hoisting efficiency when using `HYBRID` vs. `BV` key switching techniques during rotations.
+   - *Techniques*:
+     - BV uses fine-grained digit decomposition (`SetDigitSize()`), showing both speed improvements and possible precision tradeoffs.
+   - *Methods*: `SetKeySwitchTechnique(BV)`, `SetDigitSize()`, `EvalRotate()`, `EvalFastRotation()`, `EvalFastRotationPrecompute()`.
+
+Each demo configures a custom `CryptoContext<DCRTPoly>` using `CCParams<CryptoContextCKKSRNS>`, sets batch sizes, multiplicative depth, scaling technique, and enables necessary FHE features with `Enable(PKE|KEYSWITCH|LEVELEDSHE)`. Input vectors are encrypted and evaluated, and outputs are decrypted and compared for correctness and timing.
+
+This file is ideal for evaluating OpenFHE's CKKS features under 128-bit settings and understanding the performance implications of various encryption strategies and optimizations.
+"""
+        },
+        {
+            "file_path": "ckks-noise-flooding.cpp",
+            "summary": """This file demonstrates an experimental two-phase CKKS encryption workflow using the `NOISE_FLOODING_DECRYPT` mode in OpenFHE, designed to enhance decryption security in the INDCPA^D threat model. The key task is to perform encrypted computation securely while injecting statistically measured noise to prevent leakage during decryption.
+
+Main Tasks and Methods:
+
+1. **Two-Phase Execution for Noise Flooding**:
+   - *Phase 1 – Noise Estimation*: A CKKS computation is executed using `EXEC_NOISE_ESTIMATION` mode to estimate the noise generated by the operation.
+   - *Phase 2 – Encrypted Evaluation*: The actual computation is repeated using `EXEC_EVALUATION`, with the estimated noise injected to enhance security during decryption.
+   - *Purpose*: This workflow provides security guarantees comparable to schemes like BGV and BFV by masking decryption errors with statistically sound noise.
+
+2. **Encrypted Computation**:
+   - *Task*: Evaluate the expression `((vec1 * vec2) * vec1) + vec2`, where `vec1` and `vec2` are real-valued vectors encrypted under CKKS.
+   - *Techniques*:
+     - Noise measurement using `Decrypt()->GetLogError()` from a first-phase ciphertext.
+     - Reuse of shared crypto parameters in both phases, differing only by `ExecutionMode` and `NoiseEstimate`.
+   - *Methods*: 
+     - Context setup: `SetExecutionMode()`, `SetDecryptionNoiseMode(NOISE_FLOODING_DECRYPT)`, `SetNoiseEstimate()`, `SetDesiredPrecision()`, `SetMultiplicativeDepth()`, `GenCryptoContext()`.
+     - Encryption pipeline: `MakeCKKSPackedPlaintext()`, `Encrypt()`, `EvalMult()`, `EvalAdd()`, `Decrypt()`.
+
+3. **Security-Oriented Features**:
+   - The code configures noise flooding using `SetDecryptionNoiseMode(NOISE_FLOODING_DECRYPT)` and sets `StatisticalSecurity`, `DesiredPrecision`, and `NumAdversarialQueries` for INDCPA^D resilience.
+   - Separate key pairs are used for each phase (`KeyGen()`), ensuring proper cryptographic separation for noise estimation vs. evaluation.
+
+This file exemplifies a secure and reproducible framework for incorporating noise flooding in CKKS, using a consistent crypto context setup and a two-pass encrypted computation strategy. Though not yet recommended for production, it showcases future-ready secure inference in OpenFHE.
+"""
+        },
+        {
+            "file_path": "function-evaluation.cpp",
+            "summary": """This file demonstrates how to evaluate arbitrary smooth functions on encrypted data using the CKKS scheme in OpenFHE, via Chebyshev polynomial approximation. Two functions are evaluated: the logistic sigmoid function and the square root function. The focus is on encrypted function approximation over bounded real intervals using polynomial expansion techniques.
+
+Main Tasks and Methods:
+
+1. **Encrypted Logistic Function Evaluation**:
+   - *Task*: Evaluate \( f(x) = \frac{1}{1 + e^{-x}} \) over encrypted inputs using a Chebyshev approximation of degree 16.
+   - *Techniques*:
+     - Domain bounding: inputs are defined over \([-5, 5]\).
+     - Homomorphic evaluation via `EvalLogistic()`, which approximates the logistic using Chebyshev basis.
+   - *Methods*: `MakeCKKSPackedPlaintext()`, `Encrypt()`, `EvalLogistic()`, `Decrypt()`, `EvalMultKeyGen()`, `Enable(ADVANCEDSHE)`.
+
+2. **Encrypted Square Root Function Evaluation**:
+   - *Task*: Approximate \( f(x) = \sqrt{x} \) using Chebyshev interpolation of degree 50.
+   - *Techniques*:
+     - Uses `EvalChebyshevFunction()` with a lambda function representing \( \sqrt{x} \), bounded in \([0, 10]\).
+     - Requires higher multiplicative depth due to larger polynomial degree.
+   - *Methods*: Same as above, but uses `EvalChebyshevFunction()` with user-defined function.
+
+3. **Setup and Parameterization**:
+   - Both examples configure a `CryptoContext<DCRTPoly>` with:
+     - `SetRingDim()` to control ring size (set small for demo).
+     - `SetMultiplicativeDepth()` based on polynomial degree.
+     - `SetScalingModSize()` and `SetFirstModSize()` for precision control.
+   - Advanced SHE features (`ADVANCEDSHE`) are required for Chebyshev support.
+
+This file is useful for learning how to apply function approximation over encrypted inputs, showing the flexibility of CKKS in OpenFHE to evaluate nonlinear functions via polynomial expansion with tunable depth and accuracy.
+"""
+        },
+        {
+            "file_path": "inner-product.cpp",
+            "summary": """This file presents a minimal but complete demonstration of computing the inner product of a real-valued vector with itself using the CKKS scheme in OpenFHE. The main task is to evaluate the expression ∑(xᵢ²) while the input vector remains encrypted. The implementation adheres to the standard stages of CKKS-based homomorphic computation.
+
+Parameter Setup: Configures the CryptoContextCKKSRNS with multiplicative depth (10), scaling modulus size (59 bits), ring dimension (256), and batch size (128). Security level is set to HEStd_NotSet to allow for experimentation without strict constraints.
+
+Key Generation: Generates public and secret keys required for encryption, decryption, and homomorphic evaluation.
+
+Encoding: The input vector is encoded into a CKKS-compliant plaintext using OpenFHE’s encoder.
+
+Encryption: The encoded plaintext is encrypted into a ciphertext using the public key.
+
+Computation: Performs homomorphic element-wise multiplication (squaring the vector) using EvalMult, followed by summing all slots using EvalSum to compute the encrypted inner product.
+
+Decryption: Uses the secret key to decrypt the resulting ciphertext after computation.
+
+Decoding: Decodes the decrypted plaintext to recover the approximate inner product result in readable real-number format.
+
+This example illustrates how to securely compute inner products on encrypted data using CKKS, with an emphasis on the correctness of the homomorphic computation pipeline. The helper function plainInnerProduct is used to compute the expected result in plaintext for verification purposes."""
+        },
+        {
+            "file_path": "iterative-ckks-bootstrapping.cpp",
+            "summary": """This file demonstrates an example of performing multiple iterations of CKKS bootstrapping using the OpenFHE library. The main task is to apply bootstrapping twice to an encrypted real-valued vector to improve its approximation precision beyond the limit of a single bootstrapping iteration. The implementation is based on the META-BTS technique from Bae et al. (ePrint 2022/1167), and showcases how iterative bootstrapping can double the achievable precision.
+
+Parameter Setup:
+Configures the CryptoContextCKKSRNS with ring dimension (4096), scaling modulus size (59 or 78 bits), and the appropriate scaling technique (FLEXIBLEAUTO or FIXEDAUTO) depending on native integer size. Sets a two-step bootstrapping level budget and calculates the multiplicative depth needed for two iterations using FHECKKSRNS::GetBootstrapDepth.
+
+Key Generation:
+Generates key pairs, evaluation multiplication keys, and bootstrapping keys needed for leveled homomorphic encryption and bootstrapping.
+
+Encoding:
+Generates random real-valued inputs and encodes them into CKKS plaintexts using MakeCKKSPackedPlaintext. Inputs are encoded in a sparse format using 8 slots.
+
+Encryption:
+Encrypts the CKKS plaintexts into ciphertexts using the public key.
+
+Computation:
+
+Performs a single iteration of bootstrapping using EvalBootstrap to evaluate the initial approximation precision.
+
+Calculates approximation error using the CalculateApproximationError function (based on the infinity norm of real-part differences).
+
+Performs a second iteration of bootstrapping by passing the empirically measured precision back into EvalBootstrap, achieving significantly improved precision.
+
+Decryption:
+Decrypts the bootstrapped ciphertexts using the secret key to verify the quality of the output.
+
+Decoding:
+Retrieves the decoded real-valued vector from the final plaintext and prints the precision gain and remaining levels.
+
+This example provides a clear demonstration of how iterative bootstrapping can be used to overcome precision limitations in CKKS by chaining multiple bootstraps. It focuses on correctness, precision measurement, and provides insights into parameter tuning for enhanced accuracy in encrypted computations."""
+        },
+        {
+            "file_path": "linearwsum-evaluation.cpp",
+            "summary": """This file demonstrates how to evaluate a linear weighted sum (LWS) over multiple encrypted real-valued vectors using the CKKS scheme in OpenFHE. The main task is to compute a polynomial of the form ∑(wᵢ · xᵢ) homomorphically, where wᵢ are real-valued coefficients and xᵢ are encrypted input vectors.
+
+Parameter Setup:
+Initializes a CryptoContextCKKSRNS with multiplicative depth 1, ring dimension 2048, scaling modulus size 50, batch size 8, and first modulus size 60. The scaling technique used is FLEXIBLEAUTO, and the security level is set to HEStd_NotSet to allow flexible experimentation.
+
+Key Generation:
+Generates a public/secret key pair using KeyGen() and evaluation multiplication keys via EvalMultKeyGen() to enable homomorphic linear operations.
+
+Encoding:
+Seven input vectors of complex numbers are encoded using MakeCKKSPackedPlaintext, each corresponding to a term in the linear combination.
+
+Encryption:
+Each encoded plaintext is encrypted individually into a ciphertext using the public key.
+
+Computation:
+Performs a homomorphic linear weighted sum over the encrypted vectors using the EvalLinearWSum method, which computes the encrypted equivalent of the polynomial expression ∑(wᵢ · Enc(xᵢ)).
+
+Decryption:
+Decrypts the result using the secret key and stores the output in a plaintext object.
+
+Decoding:
+Converts the decrypted plaintext into real-number values and compares the result against a manually computed expected value obtained from performing the weighted sum in plaintext.
+
+This example focuses on showcasing the efficiency and correctness of EvalLinearWSum in homomorphically evaluating linear polynomials. It illustrates how real-valued polynomial evaluation can be securely performed on encrypted vectors using CKKS with minimal depth, making it ideal for lightweight computations in privacy-preserving ML tasks."""
+        },
+        {
+            "file_path": "polynomial-evaluation.cpp",
+            "summary": """This file demonstrates how to perform polynomial evaluation on encrypted real-valued vectors using the CKKS scheme in OpenFHE. The main task is to homomorphically evaluate two different polynomials on the same input vector, encrypted under CKKS, using the EvalPoly method.
+
+Parameter Setup:
+Initializes a CryptoContextCKKSRNS with multiplicative depth 6 and scaling modulus size 50 to support evaluation of high-degree polynomials. The context is enabled with public key encryption (PKE), key switching, leveled SHE, and advanced SHE capabilities.
+
+Key Generation:
+Generates a public/secret key pair and evaluation multiplication keys using KeyGen() and EvalMultKeyGen() to support encrypted polynomial evaluation.
+
+Encoding:
+A single vector of five complex-valued real numbers is encoded using MakeCKKSPackedPlaintext, which will be used as the input for both polynomial evaluations.
+
+Encryption:
+The encoded plaintext is encrypted into a ciphertext using the public key.
+
+Computation:
+
+Two separate polynomial evaluations are carried out on the same encrypted input using EvalPoly with two different coefficient vectors:
+
+coefficients1: A sparse, non-contiguous polynomial with mostly zeros.
+
+coefficients2: A longer polynomial with both positive and negative terms, designed to test deeper computation chains.
+
+Each polynomial is evaluated homomorphically on the encrypted input, and the time taken for both evaluations is measured separately.
+
+Decryption:
+The resulting ciphertexts from each evaluation are decrypted using the secret key to recover the computed plaintexts.
+
+Decoding:
+The decrypted results are converted back into complex number vectors and compared against expected plaintext results for validation.
+
+This example showcases how OpenFHE's EvalPoly function can be used to efficiently and securely evaluate arbitrary polynomials on encrypted data using CKKS. It emphasizes how different polynomial structures affect computation time and depth requirements while maintaining correctness of results."""
+        },
+        {
+            "file_path": "rotation.cpp",
+            "summary": """This file demonstrates the use of vector rotation and ciphertext merging operations in the BFV and CKKS homomorphic encryption schemes using OpenFHE. The main tasks are to evaluate how EvalRotate permutes slots within encrypted vectors and how EvalMerge combines encrypted data from multiple ciphertexts into a single one. Both power-of-two cyclotomic rings and sparse packing are used to illustrate flexibility.
+
+Parameter Setup:
+Separate crypto contexts are initialized for BFVrns and CKKS schemes. For BFVrns, parameters include plaintext modulus (65537), multiplicative depth (2), and relinearization key degree (3). CKKS uses multiplicative depth 2 and scaling modulus size 40. All contexts enable PKE, KEYSWITCH, and LEVELEDSHE, with ADVANCEDSHE also enabled for EvalMerge.
+
+Key Generation:
+Generates key pairs for each scheme using KeyGen(), along with rotation evaluation keys via EvalRotateKeyGen() for a variety of positive and negative rotation indices.
+
+Encoding:
+For EvalRotate, BFVrns encodes integer vectors using MakePackedPlaintext, while CKKS uses MakeCKKSPackedPlaintext for vectors of complex numbers. The vectors are sized to match the ring dimension or cyclotomic order.
+
+Encryption:
+Each plaintext is encrypted using the respective public key. For EvalMerge, multiple BFVrns plaintexts are encrypted separately into individual ciphertexts.
+
+Computation – EvalRotate:
+Applies EvalRotate to a single ciphertext across various rotation indices (positive and negative). Each rotated ciphertext is decrypted to verify the rotated slot values.
+
+Computation – EvalMerge:
+Combines five separately encrypted BFVrns ciphertexts using EvalMerge, which results in a single ciphertext that merges information from all original ciphertexts.
+
+Decryption:
+Each rotated or merged ciphertext is decrypted using the secret key to recover the transformed or combined data for validation.
+
+Decoding:
+Decrypted plaintexts are converted to human-readable values using SetLength() to print the slot contents after transformations.
+
+This example focuses on demonstrating how OpenFHE supports flexible vector manipulation through slot-level operations like EvalRotate and aggregation through EvalMerge, enabling efficient manipulation of encrypted data for advanced applications such as private vector indexing, encrypted databases, or privacy-preserving analytics."""
+        },
+        {
+            "file_path": "scheme-switching-serial.cpp",
+            "summary": """This file demonstrates real-number encryption, serialization, and scheme switching between CKKS and FHEW using OpenFHE. The main task is to simulate end-to-end secure communication between two parties (a server and a client) through the serialization of encrypted real-number vectors, enabling ciphertext transfer and homomorphic computation via EvalMinSchemeSwitching (argmin computation in the FHEW domain). This example sets up the infrastructure for future communication across separate devices or enclaves.
+
+Parameter Setup:
+A CryptoContextCKKSRNS is configured with ring dimension, batch size, multiplicative depth, scaling modulus size, and first modulus size. SecurityLevel is set to HEStd_NotSet, and FLEXIBLEAUTO is used as the scaling technique. The system also initializes BinFHE parameters for scheme switching.
+
+Key Generation:
+The server generates a CKKS key pair using KeyGen(), and bootstrapping keys for scheme switching (EvalSchemeSwitchingKeyGen). A scheme switching setup is prepared using EvalSchemeSwitchingSetup with configurable options like one-hot encoding and argmin computation.
+
+Encoding:
+The server encodes a real-valued vector using MakeCKKSPackedPlaintext and encrypts it with the CKKS public key.
+
+Encryption:
+The plaintext is encrypted on the server, and the resulting ciphertext is serialized along with the crypto context, public key, evaluation keys, and scheme switching metadata using SchemeSwitchingDataSerializer.
+
+Computation (Client-Side):
+
+The client deserializes the server's data using SchemeSwitchingDataDeserializer.
+
+The client precomputes comparison-related parameters using EvalCompareSwitchPrecompute.
+
+Then it runs an encrypted argmin operation using EvalMinSchemeSwitching, simulating secure computation over the received ciphertext.
+
+The result is serialized and returned to the server.
+
+Computation (Server-Side):
+The server deserializes the argmin result sent by the client and decrypts it using the CKKS secret key.
+
+Decryption:
+The server decrypts the final ciphertext to obtain the argmin result, expected to be a one-hot encoded vector indicating the index of the minimum value.
+
+Decoding:
+The decrypted result is returned and printed, confirming correct slot alignment and value preservation across encryption, scheme switching, and computation.
+
+This example provides a foundational pipeline for cross-scheme encrypted data transfer and secure delegation of computation, enabling real-world applications such as encrypted federated learning, privacy-preserving inference, or client-server secure ML pipelines involving multiple encryption schemes (CKKS → FHEW)."""
+        },
+        {
+            "file_path": "scheme-switching.cpp",
+            "summary": """This file demonstrates a hybrid encrypted computation pipeline using OpenFHE that combines the CKKS and FHEW schemes. The goal is to compute the index of the minimum value (argmin) over a list of encrypted real numbers while preserving data privacy. This example provides a full walkthrough of cross-scheme homomorphic processing, moving from approximate real arithmetic to exact binary comparisons.
+
+Parameter Setup: Initializes two crypto contexts—CKKS for approximate arithmetic over real numbers, and FHEW for fast Boolean logic. Parameters include ring dimension, multiplicative depth, scaling modulus size, and batch size for CKKS, as well as key generation settings for FHEW.
+
+Key Generation: Generates all required keys for both schemes. For CKKS, this includes public, secret, and evaluation keys for arithmetic. For FHEW, bootstrapping keys and switching keys are generated to enable ciphertext conversion from CKKS to FHEW.
+
+Encoding: Encodes a vector of real numbers into CKKS plaintexts suitable for homomorphic encryption.
+
+Encryption: Encrypts the encoded plaintexts under the CKKS scheme, producing a vector of CKKS ciphertexts.
+
+Function Evaluation and Floor: Applies EvalFloor homomorphically to each encrypted value to map approximate CKKS ciphertexts to a form compatible with binary logic, preparing them for conversion to FHEW.
+
+Scheme Switching (CKKS to FHEW): Converts each floored CKKS ciphertext into an equivalent binary FHEW ciphertext using EvalFloorAndConvert, enabling exact comparisons.
+
+Comparison: Executes pairwise comparisons of encrypted values using FHEW’s Comparator functionality, yielding encrypted Boolean bits that represent whether one value is less than another.
+
+Argmin Computation: Aggregates comparison results to derive encrypted bits encoding the index of the smallest value in the original input vector.
+
+Decryption: Decrypts the Boolean ciphertexts and determines the plaintext index corresponding to the minimum value, demonstrating the result of the full encrypted argmin pipeline.
+
+This example highlights the versatility of OpenFHE in supporting heterogeneous cryptographic schemes and securely computing data-dependent control logic such as argmin over encrypted real inputs."""
+        },
+        {
+            "file_path": "simple-ckks-bootstrapping.cpp",
+            "summary": """This file demonstrates bootstrapping in the CKKS scheme with full packing using OpenFHE. The primary objective is to refresh a depleted ciphertext—one that has consumed nearly all its computational depth—so that it can support further homomorphic operations. The example highlights how CKKS bootstrapping allows continued computation by dynamically restoring the multiplicative depth of an encrypted ciphertext.
+
+Parameter Setup: Initializes a CKKS CryptoContext with specific secret key distribution (`UNIFORM_TERNARY`), ring dimension, security level, scaling modulus sizes, and scaling techniques. The multiplicative depth is determined by the required bootstrapping depth plus a post-bootstrap budget.
+
+Key Generation: Generates a public-secret key pair along with evaluation keys necessary for homomorphic multiplication and bootstrapping.
+
+EvalBootstrapSetup: Configures the CKKS context for bootstrapping using a provided level budget. This prepares internal parameters and evaluation keys for the bootstrapping protocol.
+
+Encoding: Encodes a vector of real values into a CKKS plaintext, carefully positioned at a high level close to depletion, simulating a ciphertext that needs refreshing.
+
+Encryption: Encrypts the encoded plaintext to produce a ciphertext that has minimal levels remaining, setting up the need for bootstrapping.
+
+Bootstrapping: Applies `EvalBootstrap` to the ciphertext. This operation restores the computational depth and enables further homomorphic operations. The process involves modulus extension, scaling, and approximate rescaling.
+
+Decryption and Decoding: Decrypts the refreshed ciphertext and decodes the result to verify the correctness and precision of the bootstrapping operation.
+
+This example is essential for understanding how CKKS bootstrapping works in practice, enabling continued homomorphic computations even after the ciphertext has exhausted its available multiplicative depth. It showcases full-slot packing, practical parameter selection, and precision-preserving refresh through bootstrapping."""
+        },
+        {
+            "file_path": "simple-real-numbers-serial.cpp",
+            "summary": """This file presents a client-server style simulation for real-number homomorphic encryption using the CKKS scheme in OpenFHE, with an emphasis on full serialization and deserialization of cryptographic components and ciphertexts. It demonstrates secure computation between two separate entities by storing and exchanging encrypted data via disk-based serialization.
+
+Parameter Setup: Configures the CryptoContext with CKKS-specific parameters including multiplicative depth, scaling modulus size, and batch size. The scheme enables homomorphic operations like multiplication, addition, and rotation.
+
+Key Generation: Generates a public/secret keypair on the server. The server also generates and serializes relinearization (EvalMult) and rotation (EvalAutomorphism) keys.
+
+Encoding & Encryption: The server encodes three complex-valued input vectors and encrypts them into ciphertexts. These ciphertexts, along with the CryptoContext and keys, are serialized to disk.
+
+Client-Side Computation: The client deserializes the CryptoContext, public key, and evaluation keys. It loads ciphertexts from the server, performs encrypted addition, multiplication, and both left and right rotations. Additionally, the client encodes and encrypts its own vector and serializes all processed ciphertexts.
+
+Server Verification: The server deserializes the client's encrypted results, decrypts them using its secret key, and validates correctness. Expected results are printed for multiplication, addition, and rotation operations.
+
+This example serves as a foundational demonstration of real-number encrypted computation in distributed settings, highlighting persistent storage, ciphertext interoperability, and secure function evaluation across trust boundaries."""
+        }
+    ]
+}
+
+with open("summaries_db.json", "w") as f:
+    json.dump(data, f, indent=2)
